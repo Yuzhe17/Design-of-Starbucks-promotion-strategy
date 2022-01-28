@@ -7,7 +7,7 @@ import datetime
 import sys
 import glob
 
-from select_classifiers import downsample_majority
+from select_classifiers import downsample_majority, prepare_dataset
 import matplotlib.pyplot as plt
 import seaborn as sb
 
@@ -30,9 +30,6 @@ import pickle
 logging.basicConfig(filename='starbucks.log', level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s")
 logging.info('start running: {}'.format(str(datetime.datetime.now())))
 
-# load in the data
-train_data = pd.read_csv('data/training.csv')
-
 def save_model(model,classifier_path):
     '''save the model as pickle file
 
@@ -54,6 +51,7 @@ def optimize_classifier(X,y):
     returns:
         classifier: a sklearn classifier with fine tuned hyperparameters
     '''
+
 
     dt=DecisionTreeClassifier()
     gs=GridSearchCV(dt,param_grid={'max_depth':[3,4,5],'min_samples_split':[2,4,6],'min_samples_leaf':[1,3,5],'max_leaf_nodes':[5,10,15]},scoring='f1')
@@ -122,18 +120,11 @@ def calculate_cutoffs(y_score,n):
     return list(cutoffs_list)
 
 if __name__ == '__main__':
-    
-    print('loading the dataset')
-    features = ['V1','V2','V3','V4','V5','V6','V7']
-
-    #only retain features in the features list
-    X=train_data[features]
-    y=train_data['purchase']
-
+    X,y=prepare_dataset()
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    X_train,y_train=downsample_majority(X_train,y_train,2)
+    X_train,y_train=downsample_majority(X_train,y_train,3)
 
 
     if not glob.glob('*.pkl'):
@@ -143,7 +134,7 @@ if __name__ == '__main__':
         print("optimize the classifier")
         #optimize the DecisionTreeClassifier and the DecisionTree is selected over other classification algorithms after comparison
         classifier = optimize_classifier(X_train,y_train)
-        classifier.fit(X_train,y_train)
+        #classifier.fit(X_train,y_train)
 
         print('save the classifier')
         save_model(classifier,classifier_path)

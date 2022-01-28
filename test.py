@@ -126,5 +126,5 @@ def plot_irr_nir(promotion_strategy,threshold_iter):
     # return irr, nir
 
 if __name__ == '__main__':
-    plot_irr_nir(promotion_strategy,threshold_iter=np.linspace(0.33,0.4,num=7000))
+    plot_irr_nir(promotion_strategy,threshold_iter=np.linspace(0.2,0.3,num=500))
     

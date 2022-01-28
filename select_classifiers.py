@@ -26,7 +26,46 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import pickle
 
-train_data = pd.read_csv('data/training.csv')
+def label_if_promote(df):
+    '''label the if_promote column as 1 if the the promotion is sent and purchase is made,
+        label the if_promote column as -1 if the the promotion is not sent and purchase is not made
+    '''
+
+    if df['Promotion']=='Yes' and df['purchase']==1:
+        df['if_promote']=1
+
+    if df['Promotion']=='No' and df['purchase']==0:
+        df['if_promote']=-1
+    
+def preprocess_data(df):
+    '''preprocess the df dataset to add if_promote column indicating if we would send offers to these kind of users.
+    '''
+    df['if_promote']=np.zeros(df.shape[0])
+    
+    df.loc[(df['Promotion']=='Yes') & (df['purchase']==1),'if_promote']=1
+    df.loc[(df['Promotion']=='No') & (df['purchase']==0),'if_promote']=-1
+
+
+    return df
+
+def prepare_dataset():
+    '''read and preprocess the dataset
+    '''
+
+    # load in the data
+    train_data = pd.read_csv('data/training.csv')
+
+    print('loading the dataset')
+    features = ['V1','V2','V3','V4','V5','V6','V7']
+
+    #only retain features in the features list
+    train_data=preprocess_data(train_data)
+    train_data_promote=train_data[train_data['if_promote']!=-1]
+
+    X=train_data_promote[features]
+    y=train_data_promote['if_promote']
+
+    return X,y
 
 classifiers = [
     KNeighborsClassifier(3),
@@ -51,7 +90,7 @@ def downsample_majority(X_train,y_train,n):
     n_class1 = len(i_class1)
 
     # For every observation of class 0, randomly sample from class 1 without replacement
-    i_class0_downsampled = np.random.choice(i_class0, size=n_class1*2, replace=False)
+    i_class0_downsampled = np.random.choice(i_class0, size=n_class1*n, replace=False)
 
     # Create new indices based on the downsampled class 0
     indices = np.concatenate((i_class0_downsampled, i_class1))
@@ -103,15 +142,18 @@ def compare_classifiers(classifiers,X,y):
 
         
 def determine_best_classifier(classifiers):
-    
-    print('preparing the dataset')
-    X=train_data.iloc[:,3:]
-    y=train_data['purchase']
+    '''select the best classifiers
+
+    args:
+        classifiers(list): a list of machine learning classifiers        
+    '''
+    #load and preprocess the dataset
+    X,y=prepare_dataset()
 
     print('determine the best classifier')
     best_classifier=compare_classifiers(classifiers,X,y)
     
-    #logging.info('best classifier is {}'.format(best_classifier.__class__.__name__))
+    logging.info('best classifier is {}'.format(best_classifier.__class__.__name__))
 
 
 
